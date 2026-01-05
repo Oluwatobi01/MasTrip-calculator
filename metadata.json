@@ -1,0 +1,7 @@
+{
+  "name": "Mas Drive",
+  "description": "Smart taxi fare estimator and route planner powered by Gemini",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
