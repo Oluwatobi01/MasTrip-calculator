@@ -1,5 +1,5 @@
-// Replace the empty string below with your Google Maps API Key
-// You can get one here: https://developers.google.com/maps/documentation/javascript/get-api-key
-// Make sure to enable: Maps JavaScript API, Places API, and Directions API
+// Google Maps API Key Configuration
+// The key is now loaded from environment variables (process.env.GOOGLE_MAPS_API_KEY)
+// or can be entered manually in the application UI.
 
-export const GOOGLE_MAPS_API_KEY: string = 'AIzaSyCe8o2AywZO8c0PaUeQFICGmL03fDK3rWc';
+export const GOOGLE_MAPS_API_KEY: string = process.env.GOOGLE_MAPS_API_KEY || '';

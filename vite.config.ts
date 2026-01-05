@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // Shims process.env.API_KEY to allow existing code to work
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
+      'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY),
       // Shim process.env for other libraries that might access it
       'process.env': {}
     }
