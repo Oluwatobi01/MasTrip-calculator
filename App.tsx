@@ -74,16 +74,16 @@ function App() {
 
   // Load API Key
   useEffect(() => {
-    // 1. Check Local Storage FIRST
-    const storedKey = localStorage.getItem('google_maps_api_key');
-    if (storedKey && storedKey.length > 5) {
-      loadGoogleMaps(storedKey);
+    // 1. Priority: Use Config Key if available (Guarantees functionality)
+    if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.length > 5) {
+      loadGoogleMaps(GOOGLE_MAPS_API_KEY);
       return;
     }
 
-    // 2. Fallback to Config Key
-    if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.length > 0) {
-      loadGoogleMaps(GOOGLE_MAPS_API_KEY);
+    // 2. Fallback: Check Local Storage
+    const storedKey = localStorage.getItem('google_maps_api_key');
+    if (storedKey && storedKey.length > 5) {
+      loadGoogleMaps(storedKey);
       return;
     }
   }, []);
@@ -95,18 +95,22 @@ function App() {
       return;
     }
 
-    if (document.getElementById('google-maps-script')) return; 
+    if (document.getElementById('google-maps-script')) {
+        setIsMapLoaded(true);
+        setApiKey(key);
+        return;
+    }
 
     window.gm_authFailure = () => {
         console.error("Google Maps Authentication Failure detected.");
-        setApiKey(null); 
-        localStorage.removeItem('google_maps_api_key');
-        showToast("Invalid API Key. Please update to a valid key.");
+        // We do not clear the API key here immediately to avoid flickering loop,
+        // but we show a toast.
+        showToast("Map Authentication Failed. Check API Key restrictions.");
     };
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly&libraries=places,geometry`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -115,7 +119,6 @@ function App() {
     };
     script.onerror = () => {
       showToast("Network Error: Could not load Maps");
-      localStorage.removeItem('google_maps_api_key');
       setApiKey(null);
     };
     document.head.appendChild(script);
@@ -175,7 +178,7 @@ function App() {
                 const response = await geocoder.geocode({ location: coords });
                 if (response.results[0]) {
                      setPickup(response.results[0].formatted_address);
-                     showToast("Location found: " + response.results[0].formatted_address.split(',')[0]);
+                     showToast("Location found");
                 } else {
                      setPickup(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
                      showToast("GPS Location Found");
@@ -241,6 +244,7 @@ function App() {
 
   const selectedRoute = tripData?.routes.find(r => r.id === selectedRouteId);
   const selectedRouteIndex = tripData?.routes.findIndex(r => r.id === selectedRouteId) ?? 0;
+  const isRecommended = selectedRouteId === tripData?.recommendedRouteId;
 
   return (
     <div className="h-full flex flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-white relative transition-colors duration-300">
@@ -270,7 +274,7 @@ function App() {
           isMapLoaded={isMapLoaded}
         />
         
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-[50%] lg:min-h-auto">
             <MapVisualization 
               pickup={pickup}
               dropoff={dropoff}
@@ -278,6 +282,7 @@ function App() {
               dropoffCoords={dropoffCoords}
               selectedRoute={selectedRoute}
               routeIndex={selectedRouteIndex}
+              isRecommended={isRecommended}
               showBuffer={addBuffer}
               onLocationFound={handleLocationFound}
               isMapLoaded={isMapLoaded}
@@ -286,7 +291,7 @@ function App() {
             />
             
             {!apiKey && (
-              <ApiKeyModal onSave={(key) => {}} />
+              <ApiKeyModal onSave={(key) => loadGoogleMaps(key)} />
             )}
         </div>
       </main>
@@ -310,7 +315,7 @@ function App() {
 
       {/* Toast */}
       {toastMessage && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-6 py-3 rounded-full shadow-lg font-semibold text-sm animate-fade-in-up flex items-center gap-2">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-6 py-3 rounded-full shadow-lg font-semibold text-sm animate-fade-in-up flex items-center gap-2 pointer-events-none">
               <span className="material-symbols-outlined text-lg">info</span>
               {toastMessage}
           </div>

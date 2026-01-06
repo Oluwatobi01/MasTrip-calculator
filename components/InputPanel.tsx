@@ -154,11 +154,15 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     const temp = pickup;
     setPickup(dropoff);
     setDropoff(temp);
-    
-    // We can't easily swap coords here without keeping track of them in local state or refetching
-    // So we null them to force re-evaluation or let the map handle text
     setPickupCoords(null);
     setDropoffCoords(null);
+  };
+
+  const handleClear = () => {
+      setPickup('');
+      setDropoff('');
+      setPickupCoords(null);
+      setDropoffCoords(null);
   };
 
   const handleCoordsSave = (coords: string) => {
@@ -184,9 +188,19 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   return (
     <div className="w-full lg:w-[480px] flex flex-col bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 overflow-y-auto z-10 shadow-xl lg:shadow-none h-full relative transition-colors duration-300">
       <div className="p-6 lg:p-8 shrink-0">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-6">
-          Plan Your Trip
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            Plan Your Trip
+            </h1>
+            {(pickup || dropoff) && (
+                <button 
+                  onClick={handleClear}
+                  className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
+                >
+                    Clear All
+                </button>
+            )}
+        </div>
 
         <div className="space-y-4 mb-8">
           {/* Pickup Input */}
@@ -201,7 +215,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               onKeyDown={handleKeyDown}
               onChange={(e) => {
                   setPickup(e.target.value);
-                  setPickupCoords(null); // Clear coords on manual text edit to match what user types
+                  setPickupCoords(null);
               }}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-3.5 pl-12 pr-24 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium placeholder-slate-400"
               placeholder="Pickup Location"
@@ -241,7 +255,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               onKeyDown={handleKeyDown}
               onChange={(e) => {
                   setDropoff(e.target.value);
-                  setDropoffCoords(null); // Clear coords on manual text edit
+                  setDropoffCoords(null);
               }}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-3.5 pl-12 pr-14 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium placeholder-slate-400"
               placeholder="Where to?"
@@ -319,6 +333,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             <SuggestedRoutes 
               routes={tripData.routes}
               selectedRouteId={selectedRouteId || ''}
+              recommendedRouteId={tripData.recommendedRouteId}
               onSelectRoute={onRouteSelected}
               ratePerKm={settings.ratePerKm}
               addBuffer={addBuffer}
@@ -328,9 +343,13 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         )}
         
         {!tripData && !isLoading && (
-          <div className="text-center py-10 opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4">map</span>
-            <p className="font-medium">Enter locations to view routes</p>
+          <div className="flex flex-col items-center justify-center py-10 opacity-60">
+             <img 
+               src="https://img.freepik.com/free-vector/gps-navigation-concept-illustration_114360-9922.jpg?w=740&t=st=1708453483~exp=1708454083~hmac=1b53e4b7852a3928155985870295874288059081829285038389659021966112" 
+               alt="Map Navigation" 
+               className="w-64 h-auto mix-blend-multiply dark:mix-blend-screen mb-6 grayscale hover:grayscale-0 transition-all duration-500"
+             />
+            <p className="font-medium text-slate-500 dark:text-slate-400">Enter locations to calculate your best route</p>
           </div>
         )}
       </div>

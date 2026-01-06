@@ -1,7 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { TripEstimation } from "../types";
+import { GOOGLE_MAPS_API_KEY } from "../config";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use the key from config which falls back to process.env
+const apiKey = GOOGLE_MAPS_API_KEY;
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 export const calculateTripOptions = async (
   pickup: string,
@@ -9,7 +12,7 @@ export const calculateTripOptions = async (
 ): Promise<TripEstimation> => {
   
   // Use a default estimation if no API key or empty input to prevent crashes in demo
-  if (!process.env.API_KEY || !pickup || !dropoff) {
+  if (!apiKey || !pickup || !dropoff) {
      return mockTripData(pickup, dropoff);
   }
 
@@ -17,11 +20,14 @@ export const calculateTripOptions = async (
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Generate 3 realistic driving route options from "${pickup}" to "${dropoff}". 
-      Prioritize real-world road networks and accurate distances for the specific location (e.g. Minna, Nigeria).
-      Route 1: Recommended/Fastest.
-      Route 2: Shortest Distance.
-      Route 3: Alternative.
-      Return realistic distances in KM and durations in Minutes.`,
+      Prioritize real-world road networks and accurate distances for the specific location.
+      
+      Structure:
+      Route 1: "Recommended" - The best balance of speed and simplicity. Mark as recommended.
+      Route 2: "Shortest" - Shortest physical distance, even if slower.
+      Route 3: "Alternative" - A viable backup route.
+
+      Return realistic distances in KM and durations in Minutes. Be precise with local road names.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -43,7 +49,7 @@ export const calculateTripOptions = async (
                 required: ["id", "name", "distanceKm", "durationMin", "trafficLevel", "tags", "description"]
               }
             },
-            recommendedRouteId: { type: Type.STRING }
+            recommendedRouteId: { type: Type.STRING, description: "The ID of the route that is best overall" }
           },
           required: ["routes", "recommendedRouteId"]
         }

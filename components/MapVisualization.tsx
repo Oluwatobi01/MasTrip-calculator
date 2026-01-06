@@ -13,6 +13,7 @@ interface MapVisualizationProps {
   onUpdateApiKey?: () => void;
   onRouteStatsUpdate?: (distanceKm: number, durationMin: number) => void;
   routeIndex?: number;
+  isRecommended?: boolean;
 }
 
 // Declare google namespace
@@ -33,7 +34,8 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
   isMapLoaded,
   onUpdateApiKey,
   onRouteStatsUpdate,
-  routeIndex = 0
+  routeIndex = 0,
+  isRecommended = false
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
@@ -81,7 +83,9 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
           styles: mapStyles,
           disableDefaultUI: true,
           zoomControl: true,
-          zoomControlOptions: { position: ControlPositionEnum?.RIGHT_TOP || 5 }
+          zoomControlOptions: { position: ControlPositionEnum?.RIGHT_TOP || 5 },
+          mapTypeControl: false,
+          streetViewControl: false,
         });
 
         const ds = new window.google.maps.DirectionsService();
@@ -306,17 +310,21 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
   }, [showBuffer, mapInstance, directionsResult, routeIndex, fallbackPolyline, pickupCoords]);
 
   return (
-    <div className="flex-1 relative h-full bg-[#eef2f6] dark:bg-slate-900 overflow-hidden border-2 border-dashed border-primary/40 m-2 rounded-2xl group">
+    <div className="flex-1 relative h-full min-h-[400px] bg-[#eef2f6] dark:bg-slate-900 overflow-hidden border-2 border-dashed border-primary/40 m-2 rounded-2xl group z-0">
       
-      {/* Real Map Container */}
-      <div ref={mapRef} className={`w-full h-full absolute inset-0 rounded-xl overflow-hidden transition-opacity duration-700 ${isMapLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      {/* Real Map Container - Always visible if loaded */}
+      <div 
+        ref={mapRef} 
+        className={`w-full h-full absolute inset-0 rounded-xl overflow-hidden transition-all duration-700`}
+        style={{ visibility: isMapLoaded ? 'visible' : 'hidden' }}
+      />
 
-      {/* Loading State */}
+      {/* Loading State Overlay */}
       {!isMapLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 z-10">
            <div className="animate-pulse flex flex-col items-center opacity-50">
              <span className="material-symbols-outlined text-4xl mb-2">map</span>
-             <span className="text-sm font-medium">Waiting for API Key...</span>
+             <span className="text-sm font-medium">Loading Map...</span>
            </div>
         </div>
       )}
@@ -372,8 +380,18 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
 
       {/* Suggested Route Info Overlay */}
       {selectedRoute && isMapLoaded && !routingError && (
-          <div className="absolute bottom-6 right-4 lg:right-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-4 py-3 rounded-xl shadow-lg z-20 animate-fade-in-up flex flex-col gap-1 border-l-4 border-primary">
-               <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Suggested Route</span>
+          <div className={`absolute bottom-6 right-4 lg:right-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-4 py-3 rounded-xl shadow-lg z-20 animate-fade-in-up flex flex-col gap-1 border-l-4 ${isRecommended ? 'border-primary' : 'border-slate-400'}`}>
+               <div className="flex items-center gap-1.5 mb-1">
+                 {isRecommended ? (
+                    <>
+                      <span className="material-symbols-outlined text-primary text-sm filled">auto_awesome</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Suggested Route</span>
+                    </>
+                 ) : (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Selected Route</span>
+                 )}
+               </div>
+               
                <div className="flex items-center gap-4">
                  <div>
                     <div className="text-lg font-black text-slate-900 dark:text-white leading-none">{selectedRoute.durationMin} min</div>
